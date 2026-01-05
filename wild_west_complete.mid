@@ -1,1 +1,67 @@
 
+import mido
+from mido import Message, MidiFile, MidiTrack, MetaMessage
+
+# 1. Setup the MIDI file
+mid = MidiFile()
+
+# Track 1: Lead Banjo Melody
+lead_track = MidiTrack()
+mid.tracks.append(lead_track)
+
+# Track 2: Rhythm Banjo (The "Roll")
+rhythm_track = MidiTrack()
+mid.tracks.append(rhythm_track)
+
+# Track 3: Acoustic Bass (The "Thump")
+bass_track = MidiTrack()
+mid.tracks.append(bass_track)
+
+# 2. Settings
+tempo = mido.bpm2tempo(160)
+for t in mid.tracks:
+    t.append(MetaMessage('set_tempo', tempo=tempo))
+
+# Instrument Selection (105 = Banjo, 32 = Acoustic Bass)
+lead_track.append(Message('program_change', program=105, time=0))
+rhythm_track.append(Message('program_change', program=105, time=0))
+bass_track.append(Message('program_change', program=32, time=0))
+
+# Helper function to add notes
+def add_note(track, note, duration, velocity, time):
+    track.append(Message('note_on', note=note, velocity=velocity, time=time))
+    track.append(Message('note_off', note=note, velocity=velocity, time=duration))
+
+# --- GENERATING THE FULL ARRANGEMENT ---
+
+# Bar 1 - 4
+for bar in range(4):
+    # A. BASS LINE (Simple 1st and 3rd beat)
+    # Notes: A1 (33) for bars 1-3, E1 (28) for bar 4
+    bass_note = 33 if bar < 3 else 28
+    add_note(bass_track, bass_note, 480, 100, 0) # Beat 1
+    add_note(bass_track, bass_note, 480, 90, 480) # Beat 3
+
+    # B. RHYTHM ROLL (Constant 16th notes)
+    for _ in range(8): # 8 eighth notes per bar
+        add_note(rhythm_track, 57, 120, 60, 0) # Lower velocity for background
+        add_note(rhythm_track, 64, 120, 50, 120)
+
+# C. LEAD MELODY (The "Hero" Part)
+# Bar 1
+add_note(lead_track, 57, 480, 115, 0)   # A3
+add_note(lead_track, 60, 240, 100, 480) # C4
+add_note(lead_track, 62, 240, 105, 0)   # D4
+# Bar 2
+add_note(lead_track, 64, 960, 120, 0)   # E4 (Long)
+# Bar 3
+add_note(lead_track, 67, 480, 110, 0)   # G4
+add_note(lead_track, 69, 480, 127, 0)   # A4 (Peak)
+# Bar 4
+add_note(lead_track, 64, 240, 100, 0)   # E4
+add_note(lead_track, 62, 240, 90, 0)    # D4
+add_note(lead_track, 57, 480, 110, 0)   # A3 (Resolution)
+
+# 4. Save the file
+mid.save('wild_west_complete.mid')
+print("Complete MIDI saved as 'wild_west_complete.mid'")
